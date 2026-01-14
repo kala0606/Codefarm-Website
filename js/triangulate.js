@@ -284,6 +284,14 @@ class TriangulationEngine {
                 if (tri.progress <= 0) return;
                 
                 const { points } = tri;
+                
+                // Validate points array
+                if (!points || points.length < 3) return;
+                if (!points[0] || !points[1] || !points[2]) return;
+                if (typeof points[0].x === 'undefined' || typeof points[0].y === 'undefined') return;
+                if (typeof points[1].x === 'undefined' || typeof points[1].y === 'undefined') return;
+                if (typeof points[2].x === 'undefined' || typeof points[2].y === 'undefined') return;
+                
                 const progress = Math.min(1, tri.progress);
                 
                 // Interpolate from centroid to full triangle
@@ -294,6 +302,11 @@ class TriangulationEngine {
                 const p2 = this.lerp(cx, cy, points[1].x, points[1].y, progress);
                 const p3 = this.lerp(cx, cy, points[2].x, points[2].y, progress);
                 
+                // Validate interpolated points
+                if (!p1 || !p2 || !p3 || typeof p1.x === 'undefined' || typeof p2.x === 'undefined' || typeof p3.x === 'undefined') {
+                    return;
+                }
+                
                 // Draw each edge with RGB gradient and glow
                 const edges = [
                     { p1, p2 },
@@ -302,6 +315,11 @@ class TriangulationEngine {
                 ];
                 
                 edges.forEach((edge, edgeIndex) => {
+                    // Validate edge points
+                    if (!edge.p1 || !edge.p2 || typeof edge.p1.x === 'undefined' || typeof edge.p2.x === 'undefined') {
+                        return;
+                    }
+                    
                     const globalIndex = index * 3 + edgeIndex;
                     
                     // Create gradient for this edge - stable offsets
@@ -378,14 +396,18 @@ class TriangulationEngine {
      * Run the simulation from a click point
      */
     runFromClick(x, y, targetSection, onComplete) {
+        // Stop any existing animation
         if (this.isRunning) {
             this.stop();
         }
         
+        // Reset state
         this.targetSection = targetSection;
         this.onComplete = onComplete;
         this.isRunning = true;
         this.isTriangulating = false;
+        this.triangles = [];
+        this.currentFrame = 0;
         
         this.initializeFromPoint(x, y);
         this.simulationStartTime = performance.now();
@@ -472,6 +494,8 @@ class TriangulationEngine {
         const duration = 600;
         
         const fade = () => {
+            if (!this.isRunning) return; // Stop if animation was cancelled
+            
             const elapsed = performance.now() - startTime;
             const progress = Math.min(1, elapsed / duration);
             
@@ -500,10 +524,19 @@ class TriangulationEngine {
      */
     stop() {
         this.isRunning = false;
+        this.isTriangulating = false;
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
+            this.animationId = null;
         }
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Call onComplete if it exists to reset navigation state
+        if (this.onComplete) {
+            const callback = this.onComplete;
+            this.onComplete = null;
+            callback();
+        }
     }
     
     /**

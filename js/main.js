@@ -97,6 +97,11 @@ class CodefarmApp {
      * Navigate to section with triangulation animation
      */
     navigateToSection(targetId, clickX, clickY) {
+        // Prevent multiple simultaneous navigations
+        if (this.isNavigating) {
+            return;
+        }
+        
         this.isNavigating = true;
         
         // Close mobile nav if open
@@ -109,6 +114,7 @@ class CodefarmApp {
         
         // Run triangulation animation
         this.triangleEngine.runFromClick(clickX, clickY, targetId, () => {
+            // Reset navigation flag when animation completes
             this.isNavigating = false;
         });
         
