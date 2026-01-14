@@ -12,7 +12,8 @@ class TriangulationEngine {
         
         // Simulation parameters
         this.gridSize = 12;
-        this.maxFrames = 18;
+        this.maxFrames = 12; // Reduced for more survivors
+        this.minCells = 10; // Stop early if below this
         this.frameDelay = 40; // ms between frames
         
         // State
@@ -31,7 +32,7 @@ class TriangulationEngine {
         
         // RGB hue for accent
         this.hue = 0;
-        this.hueSpeed = 2;
+        this.hueSpeed = 0.3; // Slower for smoother animation
         
         // Bind methods
         this.update = this.update.bind(this);
@@ -66,7 +67,7 @@ class TriangulationEngine {
     /**
      * Initialize the grid with cells seeded from a point
      */
-    initializeFromPoint(x, y, density = 0.4) {
+    initializeFromPoint(x, y, density = 0.5) {
         this.grid = this.create2DArray(this.gridSize);
         this.nextGrid = this.create2DArray(this.gridSize);
         
@@ -84,7 +85,7 @@ class TriangulationEngine {
                 const dist = Math.sqrt(distX * distX + distY * distY);
                 
                 // Higher probability near center, decreasing with distance
-                const probability = density * Math.max(0, 1 - (dist / radius) * 0.5);
+                const probability = density * Math.max(0, 1 - (dist / radius) * 0.4);
                 this.grid[i][j] = Math.random() < probability ? 1 : 0;
             }
         }
@@ -93,6 +94,48 @@ class TriangulationEngine {
         this.currentFrame = 0;
         this.triangles = [];
         this.animatedTriangles = [];
+    }
+    
+    /**
+     * Count living cells in grid
+     */
+    countLivingCells() {
+        let count = 0;
+        for (let i = 0; i < this.gridSize; i++) {
+            for (let j = 0; j < this.gridSize; j++) {
+                if (this.grid[i][j] === 1) count++;
+            }
+        }
+        return count;
+    }
+    
+    /**
+     * Add random cells to reach minimum
+     */
+    ensureMinimumCells(minimum) {
+        const current = this.countLivingCells();
+        if (current >= minimum) return;
+        
+        const emptyCells = [];
+        for (let i = 0; i < this.gridSize; i++) {
+            for (let j = 0; j < this.gridSize; j++) {
+                if (this.grid[i][j] === 0) {
+                    emptyCells.push({ i, j });
+                }
+            }
+        }
+        
+        // Shuffle
+        for (let i = emptyCells.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [emptyCells[i], emptyCells[j]] = [emptyCells[j], emptyCells[i]];
+        }
+        
+        const needed = minimum - current;
+        for (let k = 0; k < Math.min(needed, emptyCells.length); k++) {
+            const { i, j } = emptyCells[k];
+            this.grid[i][j] = 1;
+        }
     }
     
     /**
@@ -235,7 +278,7 @@ class TriangulationEngine {
             }
         }
         
-        // Draw triangles with animation
+        // Draw triangles with RGB gradient glow animation
         if (showTriangles && this.triangles.length > 0) {
             this.triangles.forEach((tri, index) => {
                 if (tri.progress <= 0) return;
@@ -251,23 +294,65 @@ class TriangulationEngine {
                 const p2 = this.lerp(cx, cy, points[1].x, points[1].y, progress);
                 const p3 = this.lerp(cx, cy, points[2].x, points[2].y, progress);
                 
-                // Draw triangle edges
-                this.ctx.beginPath();
-                this.ctx.moveTo(p1.x, p1.y);
-                this.ctx.lineTo(p2.x, p2.y);
-                this.ctx.lineTo(p3.x, p3.y);
-                this.ctx.closePath();
+                // Draw each edge with RGB gradient and glow
+                const edges = [
+                    { p1, p2 },
+                    { p2, p3 },
+                    { p3, p1 }
+                ];
                 
-                // Alternate between white and colored strokes
-                if (index % 7 === 0) {
-                    this.ctx.strokeStyle = `hsl(${(this.hue + index * 10) % 360}, 100%, 50%)`;
+                edges.forEach((edge, edgeIndex) => {
+                    const globalIndex = index * 3 + edgeIndex;
+                    
+                    // Create gradient for this edge - stable offsets
+                    const gradient = this.ctx.createLinearGradient(
+                        edge.p1.x, edge.p1.y,
+                        edge.p2.x, edge.p2.y
+                    );
+                    
+                    // RGB gradient with stable offsets per edge
+                    const baseHue = this.hue;
+                    const hue1 = (baseHue + globalIndex * 25) % 360;
+                    const hue2 = (baseHue + globalIndex * 25 + 60) % 360;
+                    const hue3 = (baseHue + globalIndex * 25 + 120) % 360;
+                    
+                    gradient.addColorStop(0, `hsla(${hue1}, 100%, 60%, ${0.9 * progress})`);
+                    gradient.addColorStop(0.5, `hsla(${hue2}, 100%, 60%, ${0.9 * progress})`);
+                    gradient.addColorStop(1, `hsla(${hue3}, 100%, 60%, ${0.9 * progress})`);
+                    
+                    this.ctx.save();
+                    
+                    // Outer glow - use average hue for smoother shadow
+                    const avgHue = (hue1 + hue2 + hue3) / 3;
+                    this.ctx.shadowBlur = 10;
+                    this.ctx.shadowColor = `hsl(${avgHue}, 100%, 50%)`;
+                    this.ctx.strokeStyle = gradient;
+                    this.ctx.lineWidth = 3.5;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(edge.p1.x, edge.p1.y);
+                    this.ctx.lineTo(edge.p2.x, edge.p2.y);
+                    this.ctx.stroke();
+                    
+                    // Inner bright line
+                    this.ctx.shadowBlur = 5;
+                    this.ctx.strokeStyle = gradient;
+                    this.ctx.lineWidth = 2.5;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(edge.p1.x, edge.p1.y);
+                    this.ctx.lineTo(edge.p2.x, edge.p2.y);
+                    this.ctx.stroke();
+                    
+                    // Core bright line
+                    this.ctx.shadowBlur = 0;
+                    this.ctx.strokeStyle = gradient;
                     this.ctx.lineWidth = 2;
-                } else {
-                    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-                    this.ctx.lineWidth = 1;
-                }
-                
-                this.ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(edge.p1.x, edge.p1.y);
+                    this.ctx.lineTo(edge.p2.x, edge.p2.y);
+                    this.ctx.stroke();
+                    
+                    this.ctx.restore();
+                });
             });
         }
     }
@@ -317,15 +402,24 @@ class TriangulationEngine {
         const elapsed = performance.now() - this.simulationStartTime;
         const targetFrame = Math.floor(elapsed / this.frameDelay);
         
-        // Run simulation frames
+        // Run simulation frames with early stopping check
         while (this.currentFrame < targetFrame && this.currentFrame < this.maxFrames) {
             this.updateGrid();
             this.currentFrame++;
+            
+            // Stop early if cells drop too low
+            if (this.countLivingCells() <= this.minCells) {
+                this.currentFrame = this.maxFrames; // Force end
+                break;
+            }
         }
         
         this.draw(true, false);
         
         if (this.currentFrame >= this.maxFrames) {
+            // Ensure minimum cells before triangulation
+            this.ensureMinimumCells(15);
+            
             // Simulation complete, start triangulation animation
             this.collectLivingCells();
             this.triangulate();
@@ -420,7 +514,7 @@ class TriangulationEngine {
     }
 }
 
-// Hero Logo Animation - Continuous generative display
+// Hero Logo Animation - Continuous generative display with smooth morphing
 class HeroLogoAnimation {
     constructor(container) {
         this.container = container;
@@ -430,14 +524,29 @@ class HeroLogoAnimation {
         this.ctx = this.canvas.getContext('2d');
         
         this.gridSize = 8;
-        this.maxFrames = 20;
-        this.frameDelay = 100;
+        this.maxFrames = 12; // Reduced frames - more cells survive
+        this.frameDelay = 80;
+        
+        // Cell count thresholds
+        this.minCells = 8;  // Stop simulation if we drop below this
+        this.targetCells = 12; // Ideal number of cells for nice triangulation
         
         this.grid = null;
         this.nextGrid = null;
-        this.livingCells = [];
-        this.triangles = [];
+        
+        // Current and target points for morphing
+        this.currentPoints = [];
+        this.targetPoints = [];
+        this.morphProgress = 0;
+        this.morphDuration = 1500; // ms for morph transition
+        this.morphStartTime = 0;
+        
+        // Edges for drawing (interpolated)
+        this.edges = [];
+        
         this.hue = 0;
+        this.hueSpeed = 0.3; // Slower hue change for smoother animation
+        this.isAnimating = false;
         
         this.resize();
         this.init();
@@ -460,8 +569,8 @@ class HeroLogoAnimation {
         this.grid = this.create2DArray(this.gridSize);
         this.nextGrid = this.create2DArray(this.gridSize);
         
-        // Random initialization
-        const density = 0.35;
+        // Random initialization with higher density for more survivors
+        const density = 0.45;
         for (let i = 0; i < this.gridSize; i++) {
             for (let j = 0; j < this.gridSize; j++) {
                 this.grid[i][j] = Math.random() < density ? 1 : 0;
@@ -469,7 +578,44 @@ class HeroLogoAnimation {
         }
         
         this.currentFrame = 0;
-        this.startSimulation();
+        this.runSimulation();
+    }
+    
+    // Count current living cells in grid
+    countLivingCells() {
+        let count = 0;
+        for (let i = 0; i < this.gridSize; i++) {
+            for (let j = 0; j < this.gridSize; j++) {
+                if (this.grid[i][j] === 1) count++;
+            }
+        }
+        return count;
+    }
+    
+    // Add random cells to reach target count
+    addRandomCells(targetCount) {
+        const emptyCells = [];
+        for (let i = 0; i < this.gridSize; i++) {
+            for (let j = 0; j < this.gridSize; j++) {
+                if (this.grid[i][j] === 0) {
+                    emptyCells.push({ i, j });
+                }
+            }
+        }
+        
+        // Shuffle and pick cells to fill
+        for (let i = emptyCells.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [emptyCells[i], emptyCells[j]] = [emptyCells[j], emptyCells[i]];
+        }
+        
+        const currentCount = this.countLivingCells();
+        const needed = targetCount - currentCount;
+        
+        for (let k = 0; k < Math.min(needed, emptyCells.length); k++) {
+            const { i, j } = emptyCells[k];
+            this.grid[i][j] = 1;
+        }
     }
     
     countNeighbors(x, y) {
@@ -503,93 +649,311 @@ class HeroLogoAnimation {
     }
     
     collectLivingCells() {
-        this.livingCells = [];
+        const cells = [];
         for (let i = 0; i < this.gridSize; i++) {
             for (let j = 0; j < this.gridSize; j++) {
                 if (this.grid[i][j] === 1) {
-                    this.livingCells.push({
+                    cells.push({
                         x: i * this.cellSize + this.cellSize / 2,
-                        y: j * this.cellSize + this.cellSize / 2
+                        y: j * this.cellSize + this.cellSize / 2,
+                        gridX: i,
+                        gridY: j
                     });
                 }
             }
         }
+        return cells;
     }
     
-    triangulate() {
-        if (this.livingCells.length < 3) {
-            this.triangles = [];
-            return;
+    getEdgesFromPoints(points) {
+        if (points.length < 3) return [];
+        
+        const coords = points.map(p => [p.x, p.y]);
+        const delaunay = Delaunator.from(coords);
+        const edges = [];
+        const triangles = delaunay.triangles;
+        
+        // Extract unique edges from triangles
+        const edgeSet = new Set();
+        for (let i = 0; i < triangles.length; i += 3) {
+            const pairs = [
+                [triangles[i], triangles[i + 1]],
+                [triangles[i + 1], triangles[i + 2]],
+                [triangles[i + 2], triangles[i]]
+            ];
+            
+            for (const [a, b] of pairs) {
+                const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+                if (!edgeSet.has(key)) {
+                    edgeSet.add(key);
+                    edges.push({
+                        p1: points[a],
+                        p2: points[b],
+                        index: edges.length
+                    });
+                }
+            }
         }
         
-        const points = this.livingCells.map(c => [c.x, c.y]);
-        const delaunay = Delaunator.from(points);
+        return edges;
+    }
+    
+    // Match points between formations for smooth morphing
+    matchPoints(current, target) {
+        // If we have more current points, some will fade out
+        // If we have more target points, some will fade in
+        const matched = [];
+        const usedTargets = new Set();
         
-        this.triangles = [];
-        const triangleIndices = delaunay.triangles;
-        
-        for (let i = 0; i < triangleIndices.length; i += 3) {
-            this.triangles.push([
-                this.livingCells[triangleIndices[i]],
-                this.livingCells[triangleIndices[i + 1]],
-                this.livingCells[triangleIndices[i + 2]]
-            ]);
+        // For each current point, find nearest target
+        for (const cp of current) {
+            let bestDist = Infinity;
+            let bestTarget = null;
+            let bestIdx = -1;
+            
+            for (let i = 0; i < target.length; i++) {
+                if (usedTargets.has(i)) continue;
+                const tp = target[i];
+                const dist = Math.hypot(cp.x - tp.x, cp.y - tp.y);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestTarget = tp;
+                    bestIdx = i;
+                }
+            }
+            
+            if (bestTarget && bestDist < this.canvas.width * 0.6) {
+                usedTargets.add(bestIdx);
+                matched.push({
+                    from: cp,
+                    to: bestTarget,
+                    fadeIn: false,
+                    fadeOut: false
+                });
+            } else {
+                // This point fades out (moves to center and disappears)
+                matched.push({
+                    from: cp,
+                    to: { x: this.canvas.width / 2, y: this.canvas.height / 2 },
+                    fadeIn: false,
+                    fadeOut: true
+                });
+            }
         }
+        
+        // Any unmatched targets fade in
+        for (let i = 0; i < target.length; i++) {
+            if (!usedTargets.has(i)) {
+                matched.push({
+                    from: { x: this.canvas.width / 2, y: this.canvas.height / 2 },
+                    to: target[i],
+                    fadeIn: true,
+                    fadeOut: false
+                });
+            }
+        }
+        
+        return matched;
+    }
+    
+    // Easing function for smooth animation
+    easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+    
+    // Get interpolated points at current morph progress
+    getInterpolatedPoints(progress) {
+        const eased = this.easeInOutCubic(progress);
+        const points = [];
+        
+        for (const match of this.morphData) {
+            // Skip fading out points at end, skip fading in points at start
+            if (match.fadeOut && eased > 0.9) continue;
+            if (match.fadeIn && eased < 0.1) continue;
+            
+            const x = match.from.x + (match.to.x - match.from.x) * eased;
+            const y = match.from.y + (match.to.y - match.from.y) * eased;
+            
+            // Calculate opacity for fading points
+            let opacity = 1;
+            if (match.fadeOut) {
+                opacity = 1 - eased;
+            } else if (match.fadeIn) {
+                opacity = eased;
+            }
+            
+            points.push({ x, y, opacity });
+        }
+        
+        return points;
+    }
+    
+    runSimulation() {
+        // Run Game of Life simulation with early stopping
+        for (let f = 0; f < this.maxFrames; f++) {
+            this.updateGrid();
+            
+            // Check cell count - stop early if dropping too low
+            const cellCount = this.countLivingCells();
+            if (cellCount <= this.minCells) {
+                // Stop simulation early to preserve cells
+                break;
+            }
+        }
+        
+        // Ensure we have enough cells for nice triangulation
+        const cellCount = this.countLivingCells();
+        if (cellCount < this.targetCells) {
+            this.addRandomCells(this.targetCells);
+        }
+        
+        // Get new target points
+        const newPoints = this.collectLivingCells();
+        
+        if (this.currentPoints.length === 0) {
+            // First run - no morphing needed
+            this.currentPoints = newPoints;
+            this.edges = this.getEdgesFromPoints(this.currentPoints);
+            this.startDrawLoop();
+            
+            // Schedule next evolution
+            setTimeout(() => this.evolveToNextFormation(), 3000);
+        } else {
+            // Setup morph from current to new
+            this.targetPoints = newPoints;
+            this.morphData = this.matchPoints(this.currentPoints, this.targetPoints);
+            this.morphStartTime = performance.now();
+            this.isMorphing = true;
+        }
+    }
+    
+    evolveToNextFormation() {
+        // Reinitialize grid with some randomness influenced by current state
+        const density = 0.42;
+        for (let i = 0; i < this.gridSize; i++) {
+            for (let j = 0; j < this.gridSize; j++) {
+                // Mix of random and pattern-based seeding
+                // Higher chance to keep existing cells for continuity
+                const keepOld = this.grid[i][j] === 1 && Math.random() < 0.4;
+                this.grid[i][j] = keepOld || Math.random() < density ? 1 : 0;
+            }
+        }
+        
+        this.currentFrame = 0;
+        this.runSimulation();
     }
     
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw triangles
-        this.triangles.forEach((tri, index) => {
-            this.ctx.beginPath();
-            this.ctx.moveTo(tri[0].x, tri[0].y);
-            this.ctx.lineTo(tri[1].x, tri[1].y);
-            this.ctx.lineTo(tri[2].x, tri[2].y);
-            this.ctx.closePath();
+        let pointsToDraw = this.currentPoints;
+        
+        // Handle morphing
+        if (this.isMorphing) {
+            const elapsed = performance.now() - this.morphStartTime;
+            const progress = Math.min(1, elapsed / this.morphDuration);
             
-            // Occasional RGB accent
-            if (index % 5 === 0) {
-                this.ctx.strokeStyle = `hsl(${(this.hue + index * 20) % 360}, 100%, 50%)`;
-                this.ctx.lineWidth = 2;
-            } else {
-                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-                this.ctx.lineWidth = 1.5;
+            pointsToDraw = this.getInterpolatedPoints(progress);
+            
+            if (progress >= 1) {
+                // Morph complete
+                this.isMorphing = false;
+                this.currentPoints = this.targetPoints;
+                pointsToDraw = this.currentPoints;
+                
+                // Schedule next evolution
+                setTimeout(() => this.evolveToNextFormation(), 2500);
             }
+        }
+        
+        // Get edges for current points
+        const edges = this.getEdgesFromPoints(pointsToDraw);
+        
+        // Draw edges with RGB gradient and glow
+        edges.forEach((edge, index) => {
+            const opacity = Math.min(edge.p1.opacity || 1, edge.p2.opacity || 1);
             
+            // Create gradient for this line - use stable hue offsets per edge
+            const gradient = this.ctx.createLinearGradient(
+                edge.p1.x, edge.p1.y,
+                edge.p2.x, edge.p2.y
+            );
+            
+            // RGB gradient with stable offsets - slower hue change
+            const baseHue = this.hue;
+            const hue1 = (baseHue + index * 20) % 360;
+            const hue2 = (baseHue + index * 20 + 60) % 360;
+            const hue3 = (baseHue + index * 20 + 120) % 360;
+            
+            gradient.addColorStop(0, `hsla(${hue1}, 100%, 60%, ${opacity})`);
+            gradient.addColorStop(0.5, `hsla(${hue2}, 100%, 60%, ${opacity})`);
+            gradient.addColorStop(1, `hsla(${hue3}, 100%, 60%, ${opacity})`);
+            
+            // Draw glow effect (multiple strokes with increasing blur)
+            this.ctx.save();
+            
+            // Outer glow - use average hue for shadow
+            const avgHue = (hue1 + hue2 + hue3) / 3;
+            this.ctx.shadowBlur = 8;
+            this.ctx.shadowColor = `hsl(${avgHue}, 100%, 50%)`;
+            this.ctx.strokeStyle = gradient;
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(edge.p1.x, edge.p1.y);
+            this.ctx.lineTo(edge.p2.x, edge.p2.y);
             this.ctx.stroke();
+            
+            // Inner bright line
+            this.ctx.shadowBlur = 4;
+            this.ctx.strokeStyle = gradient;
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(edge.p1.x, edge.p1.y);
+            this.ctx.lineTo(edge.p2.x, edge.p2.y);
+            this.ctx.stroke();
+            
+            // Core bright line
+            this.ctx.shadowBlur = 0;
+            this.ctx.strokeStyle = gradient;
+            this.ctx.lineWidth = 1.5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(edge.p1.x, edge.p1.y);
+            this.ctx.lineTo(edge.p2.x, edge.p2.y);
+            this.ctx.stroke();
+            
+            this.ctx.restore();
         });
         
-        this.hue = (this.hue + 1) % 360;
-    }
-    
-    startSimulation() {
-        const simulate = () => {
-            if (this.currentFrame < this.maxFrames) {
-                this.updateGrid();
-                this.currentFrame++;
-                setTimeout(simulate, this.frameDelay);
-            } else {
-                this.collectLivingCells();
-                this.triangulate();
-                this.startDrawLoop();
+        // Draw subtle vertex dots with glow
+        pointsToDraw.forEach((p, index) => {
+            const opacity = p.opacity || 1;
+            if (opacity > 0.3) {
+                const hue = (this.hue + index * 25) % 360;
                 
-                // Restart after a pause
-                setTimeout(() => {
-                    this.init();
-                }, 4000);
+                this.ctx.save();
+                this.ctx.shadowBlur = 6;
+                this.ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
+                
+                this.ctx.beginPath();
+                this.ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+                this.ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${0.6 * opacity})`;
+                this.ctx.fill();
+                
+                this.ctx.restore();
             }
-        };
+        });
         
-        simulate();
+        // Slower, smoother hue change
+        this.hue = (this.hue + this.hueSpeed) % 360;
     }
     
     startDrawLoop() {
+        if (this.isAnimating) return;
+        this.isAnimating = true;
+        
         const animate = () => {
             this.draw();
-            if (this.triangles.length > 0) {
-                requestAnimationFrame(animate);
-            }
+            requestAnimationFrame(animate);
         };
         animate();
     }
