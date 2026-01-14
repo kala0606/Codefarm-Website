@@ -3,6 +3,15 @@
    Black/White Brutalist Aesthetic with RGB Accent
    ============================================ */
 
+/* Font Face */
+@font-face {
+    font-family: 'Fira Code';
+    src: url('../FiraCode-VariableFont_wght.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* CSS Variables */
 :root {
     --black: #000000;
@@ -16,7 +25,7 @@
     --accent: hsl(var(--accent-hue), 100%, 50%);
     
     /* Typography */
-    --font-mono: 'Space Mono', monospace;
+    --font-mono: 'Fira Code', 'Space Mono', monospace;
     --font-sans: 'Work Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     
     /* Spacing */
