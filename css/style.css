@@ -773,6 +773,124 @@ body {
 }
 
 /* ============================================
+   APPLICATION FORM
+   ============================================ */
+.application-form {
+    max-width: 700px;
+    margin: var(--space-xl) auto;
+    padding: var(--space-lg);
+    background: var(--gray-dark);
+    border: 1px solid var(--gray-mid);
+}
+
+.form-group {
+    margin-bottom: var(--space-lg);
+}
+
+.form-group label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: var(--space-sm);
+    color: var(--white);
+    opacity: 0.9;
+}
+
+.required {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: var(--space-sm);
+    background: var(--black);
+    border: 1px solid var(--gray-mid);
+    color: var(--white);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    transition: var(--transition-smooth);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--white);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: var(--gray-mid);
+    opacity: 0.6;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--space-md);
+    margin-top: var(--space-xl);
+    flex-wrap: wrap;
+}
+
+.form-actions .btn {
+    flex: 1;
+    min-width: 150px;
+}
+
+.form-message {
+    margin-top: var(--space-lg);
+    padding: var(--space-md);
+    border: 1px solid var(--gray-mid);
+    background: var(--black);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    display: none;
+}
+
+.form-message.show {
+    display: block;
+}
+
+.form-message.success {
+    border-color: #4caf50;
+    color: #4caf50;
+}
+
+.form-message.error {
+    border-color: #f44336;
+    color: #f44336;
+}
+
+.form-message.loading {
+    border-color: var(--gray-mid);
+    color: var(--white);
+    opacity: 0.8;
+}
+
+/* Section adjustments for form */
+.section--cta {
+    min-height: auto;
+    padding-bottom: var(--space-xl);
+}
+
+.section--cta .container {
+    min-height: auto;
+}
+
+/* ============================================
    CONTENT IMAGES
    ============================================ */
 .content-image {
