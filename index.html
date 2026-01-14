@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CODEFARM — Computational Art & Digital Fabrication Residency</title>
+    <meta name="description" content="An immersive, practice-led residency bridging code, creativity, and physical making. Feb 27 - Mar 1, 2026 in Kolkata, India.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/delaunator@5.0.0/delaunator.min.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-logo">CODEFARM</div>
+        <div class="nav-links">
+            <a href="#hero" class="nav-link" data-section="hero">Home</a>
+            <a href="#about" class="nav-link" data-section="about">About</a>
+            <a href="#experience" class="nav-link" data-section="experience">Experience</a>
+            <a href="#curriculum" class="nav-link" data-section="curriculum">Curriculum</a>
+            <a href="#who" class="nav-link" data-section="who">Who</a>
+            <a href="#details" class="nav-link" data-section="details">Details</a>
+            <a href="#apply" class="nav-link nav-link--cta" data-section="apply">Apply</a>
+        </div>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+
+    <!-- Canvas Overlay for Triangulation Effects -->
+    <canvas id="triangleCanvas"></canvas>
+
+    <!-- Hero Section -->
+    <section class="section section--dark" id="hero">
+        <div class="hero">
+            <div class="hero-logo" id="heroLogo"></div>
+            <div class="hero-content">
+                <h1 class="hero-title">CODEFARM</h1>
+                <p class="hero-tagline">Computational Art & Digital Fabrication Residency</p>
+                <p class="hero-description">Workshops and lectures cover the topics of code-driven art, computational thinking, algorithmic creativity, machine learning and hands-on physical fabrication.</p>
+                <div class="hero-meta">
+                    <div class="hero-meta-item">
+                        <span class="hero-meta-label">Dates</span>
+                        <span class="hero-meta-value">Feb 27 (Fri) - Mar 1 (Sun) 2026</span>
+                    </div>
+                    <div class="hero-meta-item">
+                        <span class="hero-meta-label">Location</span>
+                        <span class="hero-meta-value">Kolkata, India</span>
+                    </div>
+                </div>
+                <a href="#apply" class="btn btn--primary btn--glow">Apply Now</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="section section--light" id="about">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">About Codefarm</h2>
+            </div>
+            <div class="about-grid">
+                <div class="about-col">
+                    <p class="text-large">Codefarm is an immersive, practice-led residency that bridges code, creativity, and physical making.</p>
+                    <p>Designed for artists, designers, coders, and curious minds who want to explore the poetic potential of computation through visual art, generative systems, sound, animation, and tangible fabrication.</p>
+                </div>
+                <div class="about-col">
+                    <p>We bring together expert facilitators and a small cohort for an intense 3-day journey into computational thinking and real-world output. Limited to a select group of participants for deep collaboration, experimentation, and personal discovery.</p>
+                    <p class="about-note">Like its sister residency <strong>Synthfarm</strong>, Codefarm is rooted in community, inclusivity, knowledge-sharing, and the joy of making things that didn't exist before you ran the code.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience Section -->
+    <section class="section section--dark" id="experience">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">The Experience</h2>
+            </div>
+            <div class="experience-breakdown">
+                <div class="experience-block">
+                    <span class="experience-hours">6</span>
+                    <span class="experience-unit">hours/day</span>
+                    <span class="experience-label">Lectures & Workshops</span>
+                </div>
+                <div class="experience-divider">+</div>
+                <div class="experience-block">
+                    <span class="experience-hours">2</span>
+                    <span class="experience-unit">hours/day</span>
+                    <span class="experience-label">Hands-on Making</span>
+                </div>
+            </div>
+            <div class="experience-tools">
+                <span class="tool-tag">Pen Plotters</span>
+                <span class="tool-tag">Laser Cutters</span>
+                <span class="tool-tag">3D Printers</span>
+            </div>
+            <p class="experience-summary">Expect a fast-paced mix of conceptual foundations, coding practice, algorithmic thinking, and immediate physical results. You will leave with new sketches, finished plots/prints/cuts, and a sharper creative toolkit.</p>
+        </div>
+    </section>
+
+    <!-- Curriculum Section -->
+    <section class="section section--light" id="curriculum">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">What You'll Explore</h2>
+            </div>
+            <div class="curriculum-grid">
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">Code Foundations</h3>
+                    <p>Object Oriented Programming and clean, expressive code</p>
+                </div>
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">Art History</h3>
+                    <p>The rich history of computational art — from early plotter pioneers to today's generative scene</p>
+                </div>
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">Systems Thinking</h3>
+                    <p>Computational thinking and how to see the world as systems, patterns, and rules</p>
+                </div>
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">Core Algorithms</h3>
+                    <p>Algorithms that power beautiful, emergent visuals</p>
+                </div>
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">Processing</h3>
+                    <p>Rapid sketching, animation, sound reactivity</p>
+                </div>
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">AI Iteration</h3>
+                    <p>Using modern tools to accelerate creative discovery</p>
+                </div>
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">Machine Learning</h3>
+                    <p>Intro to ml5.js for playful, artistic applications in the browser</p>
+                </div>
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">Parametric Design</h3>
+                    <p>Rhino / Grasshopper for generative 3D forms</p>
+                </div>
+                <div class="curriculum-item">
+                    <h3 class="curriculum-heading">Sound & Code</h3>
+                    <p>Coding sound and audiovisual relationships</p>
+                </div>
+            </div>
+            <div class="curriculum-physical">
+                <h3 class="curriculum-physical-title">Turning Code Into Matter</h3>
+                <div class="physical-methods">
+                    <div class="physical-method">
+                        <span class="physical-icon">◇</span>
+                        <h4>Pen Plotting</h4>
+                        <p>Delicate, mechanical drawings</p>
+                    </div>
+                    <div class="physical-method">
+                        <span class="physical-icon">△</span>
+                        <h4>Laser Cutting</h4>
+                        <p>Precise, layered physical forms</p>
+                    </div>
+                    <div class="physical-method">
+                        <span class="physical-icon">○</span>
+                        <h4>3D Printing</h4>
+                        <p>Bringing virtual geometry into the real world</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Who It's For Section -->
+    <section class="section section--dark" id="who">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Who It's For</h2>
+            </div>
+            <div class="who-content">
+                <p class="text-large">Artists, designers, coders, architects, musicians, tinkerers — anyone excited about the intersection of code and physical creation.</p>
+                <p class="who-prereq">No prior experience required in every topic; <strong>curiosity and willingness to experiment</strong> are the only prerequisites.</p>
+                <p class="who-community">We aim for a diverse, supportive group where beginners and advanced practitioners learn from each other.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Practical Details Section -->
+    <section class="section section--light" id="details">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Practical Details</h2>
+            </div>
+            <div class="details-grid">
+                <div class="detail-card">
+                    <h3 class="detail-heading">Cohort Size</h3>
+                    <p>Intimate group for maximum attention and collaboration</p>
+                </div>
+                <div class="detail-card">
+                    <h3 class="detail-heading">Meals</h3>
+                    <p>Fresh meals with both vegetarian & non-vegetarian options</p>
+                </div>
+                <div class="detail-card">
+                    <h3 class="detail-heading">Accommodation</h3>
+                    <p>Shared simple accommodation in a peaceful venue away from city distractions</p>
+                </div>
+                <div class="detail-card">
+                    <h3 class="detail-heading">Participation Fee</h3>
+                    <p>Covers workshops, materials (paper, filament, etc.), accommodation, meals, and local transport</p>
+                </div>
+            </div>
+            <p class="details-note">Codefarm runs on a not-for-profit basis to keep the experience accessible and focused on the work.</p>
+        </div>
+    </section>
+
+    <!-- Apply / CTA Section -->
+    <section class="section section--dark section--cta" id="apply">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Join?</h2>
+                <p class="cta-subtitle">Applications will open soon.</p>
+                <p class="cta-description">Subscribe for updates on dates, location, facilitators, and application process.</p>
+                <div class="cta-actions">
+                    <a href="#" class="btn btn--secondary">Subscribe for Updates</a>
+                    <a href="#" class="btn btn--primary btn--glow">Apply Now</a>
+                </div>
+            </div>
+            <div class="cta-tagline">
+                <p>Codefarm — where code meets matter, algorithms meet aesthetics, and ideas become physical artifacts.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <span class="footer-logo">CODEFARM</span>
+            <span class="footer-year">2026</span>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/triangulate.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
