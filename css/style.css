@@ -584,10 +584,26 @@ body {
 }
 
 .physical-icon {
-    font-size: 4rem;
+    width: 80px;
+    height: 80px;
     display: block;
-    margin-bottom: var(--space-md);
+    margin: 0 auto var(--space-md);
     opacity: 0.9;
+    color: var(--white);
+    stroke: currentColor;
+    fill: none;
+}
+
+.physical-icon path,
+.physical-icon line,
+.physical-icon circle {
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+
+.physical-icon circle {
+    fill: currentColor;
 }
 
 .physical-method h4 {
