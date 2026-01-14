@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conway's Game of Life - Rebirth Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/delaunator@5.0.0/delaunator.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Conway's Game of Life - Rebirth Visualization</h1>
+        <div class="info">
+            <p>Frame: <span id="frameCount">0</span> / 60</p>
+            <p>Living Cells: <span id="rebirthCount">0</span></p>
+        </div>
+        <div id="canvas-container"></div>
+        <div class="controls">
+            <label for="densitySlider">Initial Density: <span id="densityValue">30%</span></label>
+            <input type="range" id="densitySlider" min="10" max="60" value="30" step="1">
+            <button id="restartBtn">Restart Simulation</button>
+        </div>
+    </div>
+    <script src="sketch.js"></script>
+</body>
+</html>
