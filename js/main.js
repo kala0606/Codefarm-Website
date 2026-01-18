@@ -212,18 +212,25 @@ class CodefarmApp {
     }
 }
 
-// Add subtle parallax effect to hero
+// Add subtle parallax effect to hero (throttled for performance)
+let lastScrollTime = 0;
+const scrollThrottle = 16; // ~60fps
+
 window.addEventListener('scroll', () => {
+    const now = performance.now();
+    if (now - lastScrollTime < scrollThrottle) return;
+    lastScrollTime = now;
+    
     const hero = document.getElementById('hero');
     if (hero) {
         const scrollY = window.scrollY;
         const heroContent = hero.querySelector('.hero-content');
         if (heroContent && scrollY < window.innerHeight) {
-            heroContent.style.transform = `translateY(${scrollY * 0.3}px)`;
+            heroContent.style.transform = `translate3d(0, ${scrollY * 0.3}px, 0)`;
             heroContent.style.opacity = 1 - (scrollY / window.innerHeight) * 0.5;
         }
     }
-});
+}, { passive: true });
 
 // Smooth scroll polyfill for older browsers
 if (!('scrollBehavior' in document.documentElement.style)) {
